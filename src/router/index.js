@@ -5,11 +5,11 @@ import Home from '../views/Home.vue'
 Vue.use(VueRouter)
 
 const routes = [
-  {
-    path: '/home',
-    name: 'Home',
-    component: Home
-  },
+  // {
+  //   path: '/home',
+  //   name: 'Home',
+  //   component: Home
+  // },
   {
     path: '/login',
     name: 'login',
@@ -31,21 +31,11 @@ const routes = [
     name: 'guests',
     component: () => import(/* webpackChunkName: "about" */ '../views/Guests.vue')
   },
-  {
-    path: '/guestdetail/:id',
-    name: 'guestdetail',
-    component: () => import(/* webpackChunkName: "about" */ '../views/GuestDetail.vue')
-  },
 
   {
     path: '/eqptype',
     name: 'eqptype',
     component: () => import(/* webpackChunkName: "about" */ '../views/EqpType.vue')
-  },
-  {
-    path: '/eqptypedetail/:id',
-    name: 'eqptypedetail',
-    component: () => import(/* webpackChunkName: "about" */ '../views/EqpTypeDetail.vue')
   },
 
   {

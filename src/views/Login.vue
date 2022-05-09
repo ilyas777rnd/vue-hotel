@@ -59,11 +59,10 @@ export default {
           password: this.password,
         },
         success: (response) => {
-          console.log(response.data.attributes);
           alert("Вы успешно авторизовались");
           localStorage.setItem(
             "auth_token",
-            response.data.attributes.auth_token
+            response.auth_token
           );
           this.authenticate(true);
           window.location = "/";
@@ -72,25 +71,14 @@ export default {
           if (response.status === 400) {
             alert("Логин или пароль не верен");
           }
+          else if (response.status === 0){
+            console.log(response);
+            alert("Ошибка подключения к серверу");
+          }
         },
       });
 
     },
-    // async Add(){
-    //   $.ajax({
-    //     url: `${this.$store.getters.getServerUrl}/enq_type/`,
-    //     type: "POST",
-    //     data: {
-    //       name: 'Cadabra',
-    //     },
-    //     success: (response) => {
-    //       alert("Успешно");
-    //     },
-    //     error: (response) => {
-    //         alert("Ошибка");
-    //     },
-    //   });
-    // }
   },
 };
 </script>

@@ -1,48 +1,58 @@
 <template>
   <div>
-    <div class="d-flex container w-50 mt-5 mb-2 justify-content-center">
-      <span>Наименование:</span>
-      <input type="text" class="form-control ml-1 w-50" v-model="name" />
-    </div>
-
-    <div class="d-flex container w-95 mt-5 justify-content-center">
-
-      <b-table
-        hover
-        :items="found_roomtype"
-        :fields="fields"
-        @row-clicked="rowClickHandler"
-      >
-        <template #cell(delete)="row">
-          <b-button
-            size="sm"
-            @click="deleteHandler(row.item.id, row.item.name)"
-            class="mr-2 btn-danger"
-          >
-            <b-icon icon="trash-fill" aria-hidden="true"></b-icon> Удалить
+    <div
+      class="
+        bv-example-row bv-example-row-flex-cols
+        mt-3
+        d-flex
+        justify-content-center
+      "
+    >
+      <b-row align-v="stretch">
+        <b-col md="5">
+          <span>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</span>
+          <b-button variant="outline-primary" @click="AddPage()">
+            Добавить тип номера
           </b-button>
-        </template>
-
-      </b-table>
-
+        </b-col>
+        <b-col md="6">
+          <div>
+            <span class="ml-1">Наименование:</span>
+            <input type="text" class="form-control ml-1 w-100" v-model="name" />
+          </div>
+        </b-col>
+      </b-row>
     </div>
-    <div class="d-flex container w-100 mb-2 justify-content-center">
-      <button type="button" class="btn btn-success" @click="AddPage()">
-        Добавить тип номера
-      </button>
+    <StandartTable
+      :items="found_roomtype"
+      :fields="fields"
+      @row-click="rowClickHandler"
+      @delete="deleteHandler"
+    />
+    <div class="w-100">
+      <b-modal ref="my-modal" hide-footer title="Информация о комнате">
+        <RoomTypeDetail :id="current_id" />
+      </b-modal>
     </div>
   </div>
 </template>
 
 <script>
 import $ from "jquery";
+import RoomTypeDetail from "./RoomTypeDetail.vue";
+import StandartTable from "../components/StandartTable.vue";
 
 export default {
   name: "RoomType",
+  components: {
+    StandartTable,
+    RoomTypeDetail,
+  },
   data() {
     return {
       roomtype: [],
       found_roomtype: [],
+      current_id: 0,
       name: "",
       fields: [
         {
@@ -52,7 +62,7 @@ export default {
         },
         {
           key: "delete",
-          label: "Удаление",
+          label: "",
         },
       ],
     };
@@ -77,9 +87,6 @@ export default {
         },
         success: (response) => {
           this.roomtype = response;
-          // .data.map((element) => {
-          //   return { id: element.id, name: element.attributes.name };
-          // });
           this.foundRoomType();
         },
         error: (response) => {
@@ -89,19 +96,13 @@ export default {
     },
 
     rowClickHandler(record, index) {
-      const route = this.$router.resolve({
-        name: "roomtypedetail",
-        params: { id: record.id },
-      });
-      window.open(route.href, "_blank");
+      this.current_id = record.id;
+      this.showModal();
     },
 
     AddPage() {
-      const route = this.$router.resolve({
-        name: "roomtypedetail",
-        params: { id: 0 },
-      });
-      window.open(route.href, "_blank");
+      this.current_id = 0;
+      this.showModal();
     },
 
     foundRoomType(val) {
@@ -113,27 +114,34 @@ export default {
       }
     },
 
-    deleteHandler(id, name) {
-      const res = confirm(`Вы точно хотите удалить "${name}" ?`);
-      if (!res) {
-        return;
+    deleteHandler(temp) {
+      const res = confirm(`Вы точно хотите удалить "${temp.item.name}" ?`);
+      if (res) {
+        $.ajax({
+          url: `${this.$store.getters.getServerUrl}/room_type/`,
+          type: "DELETE",
+          headers: {
+            Authorization: `Token ${localStorage.getItem("auth_token")}`,
+          },
+          data: {
+            id: temp.item.id,
+          },
+          success: (response) => {
+            location.reload();
+          },
+          error: (response) => {
+            alert("Ошибка");
+          },
+        });
       }
-      $.ajax({
-        url: `${this.$store.getters.getServerUrl}/remove_room_type/`,
-        type: "POST",
-        headers: {
-          Authorization: `Token ${localStorage.getItem("auth_token")}`,
-        },
-        data: {
-          id: id,
-        },
-        success: (response) => {
-          location.reload();
-        },
-        error: (response) => {
-          alert("Ошибка");
-        },
-      });
+    },
+
+    showModal() {
+      this.$refs["my-modal"].show();
+    },
+
+    closeModal() {
+      this.$refs["my-modal"].hide();
     },
   },
 };

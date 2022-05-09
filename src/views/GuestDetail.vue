@@ -1,87 +1,140 @@
 <template>
   <div>
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span> Имя:</span>
-      <input
+    <b-form-group class="mt-1" id="example-input-group-1" label="Имя:">
+      <b-form-input
         type="text"
-        style="width: 60%"
-        class="form-control"
-        v-model="name"
-      />
-    </div>
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span> Фамилия:</span>
-      <input
+        class="form-control w-100"
+        v-model="$v.form.name.$model"
+        :state="validateState('name')"
+        aria-describedby="name-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="name-live-feedback"
+        >Введите имя.</b-form-invalid-feedback
+      >
+    </b-form-group>
+
+    <b-form-group class="mt-1" id="example-input-group-1" label="Фамилия:">
+      <b-form-input
         type="text"
-        style="width: 60%"
-        class="form-control"
-        v-model="surname"
-      />
-    </div>
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span> Серия паспорта:</span>
-      <input
+        class="form-control w-100"
+        v-model="$v.form.surname.$model"
+        :state="validateState('surname')"
+        aria-describedby="surname-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="surname-live-feedback"
+        >Введите фамилию.</b-form-invalid-feedback
+      >
+    </b-form-group>
+
+    <b-form-group
+      class="mt-1"
+      id="example-input-group-1"
+      label="Серия паспорта:"
+    >
+      <b-form-input
+        type="number"
+        class="form-control w-100"
+        v-model="$v.form.pasprot_series.$model"
+        :state="validateState('pasprot_series')"
+        aria-describedby="pasprot_series-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="pasprot_series-live-feedback"
+        >Введите серию паспорта.</b-form-invalid-feedback
+      >
+    </b-form-group>
+
+    <b-form-group
+      class="mt-1"
+      id="example-input-group-1"
+      label="Номер паспорта:"
+    >
+      <b-form-input
+        type="number"
+        class="form-control w-100"
+        v-model="$v.form.pasprot_number.$model"
+        :state="validateState('pasprot_number')"
+        aria-describedby="pasprot_number-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="pasprot_number-live-feedback"
+        >Введите номер паспорта.</b-form-invalid-feedback
+      >
+    </b-form-group>
+
+    <b-form-group
+      class="mt-1"
+      id="example-input-group-1"
+      label="Дата рождения:"
+    >
+      <b-form-input
+        type="date"
+        placeholder="ДД-ММ-ДДДД"
+        autocomplete="off"
+        class="form-control w-100"
+        v-model="$v.form.birth_date.$model"
+        :state="validateState('birth_date')"
+        aria-describedby="birth_date-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="birth_date-live-feedback"
+        >Введите дату рождения.</b-form-invalid-feedback
+      >
+    </b-form-group>
+
+    <b-form-group
+      class="mt-1"
+      id="example-input-group-1"
+      label="Мобильный телефон:"
+    >
+      <div class="d-flex">
+        <b-form-select
+          class="w-25"
+          v-model="code"
+          :options="codes"
+        ></b-form-select>
+        <b-form-input
+          type="text"
+          class="form-control w-75 ml-2"
+          v-model="$v.form.phone.$model"
+          :state="validateState('phone')"
+          @input="handleUserInput"
+          aria-describedby="phone-live-feedback"
+        ></b-form-input>
+        <b-form-invalid-feedback id="phone-live-feedback"
+          >Введите номер телефона.</b-form-invalid-feedback
+        >
+      </div>
+    </b-form-group>
+
+    <b-form-group class="mt-1" id="example-input-group-1" label="Email:">
+      <b-form-input
         type="text"
-        style="width: 60%"
-        class="form-control"
-        v-model="pasprot_series"
-      />
-    </div>
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span> Номер паспорта:</span>
-      <input
-        type="text"
-        style="width: 60%"
-        class="form-control"
-        v-model="pasprot_number"
-      />
-    </div>
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span> Дата рождения (ГГГГ-ММ-ДД):</span>
-      <datetime
-        format="YYYY-MM-DD"
-        width="300px"
-        v-model="birth_date"
-        firstDayOfWeek="1"
-      ></datetime>
-    </div>
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span> Телефон:</span>
-      <input
-        type="text"
-        style="width: 60%"
-        class="form-control"
-        v-model="phone"
-      />
-    </div>
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span> Email:</span>
-      <input
-        type="text"
-        style="width: 60%"
-        class="form-control"
-        v-model="email"
-      />
-    </div>
+        class="form-control w-100"
+        v-model="$v.form.email.$model"
+        :state="validateState('email')"
+        aria-describedby="email-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="email-live-feedback"
+        >Введите email.</b-form-invalid-feedback
+      >
+    </b-form-group>
 
     <template v-if="this.update_mode">
       <div class="d-flex container w-100 mt-2 mb-2 justify-content-center">
         <button type="button" class="btn btn-success" @click="update()">
-          Обновить данные гостя
-        </button>
-      </div>
-      <div class="d-flex container w-100 mt-2 mb-2 justify-content-center">
-        <button type="button" class="btn btn-danger" @click="del()">
-          Удалить данные гостя
+          OK
         </button>
       </div>
     </template>
 
-    <template v-else>
+    <template>
       <div class="d-flex container w-100 mt-2 mb-2 justify-content-center">
-        <button type="button" class="btn btn-success" @click="addGuest()">
-          Добавить гостя
-        </button>
+        <b-button
+          variant="outline-primary"
+          id="btAddGuest"
+          v-bind:class="{ hide: hide_button }"
+          @click="addGuest()"
+        >
+          Добавить
+        </b-button>
       </div>
     </template>
   </div>
@@ -89,80 +142,160 @@
 
 <script>
 import $ from "jquery";
-import datetime from "vuejs-datetimepicker";
+import { validationMixin } from "vuelidate";
+import {
+  required,
+  minLength,
+  maxLength,
+  email,
+} from "vuelidate/lib/validators";
+
 export default {
+  mixins: [validationMixin],
   name: "GuestDetail",
-  components: { datetime },
+
   props: {
-    id: Number
+    current_object: {},
+    on_modal: {
+      type: Boolean,
+      default: false,
+    },
+    booking_id: {
+      type: Number,
+      default: -1,
+    },
   },
+
   data() {
     return {
-      //id: 0,
       update_mode: true,
-      name: "",
-      surname: "",
-      pasprot_series: "",
-      pasprot_number: "",
-      birth_date: "",
-      phone: "",
-      email: "",
+      hide_button: false,
+      code: "",
+      codes: [],
+      form: {
+        name: null,
+        surname: null,
+        pasprot_series: null,
+        pasprot_number: null,
+        birth_date: null,
+        phone: null,
+        email: null,
+      },
     };
   },
-  created() {
-    //let id = window.location.href.split("/")[4];
-    console.log(this.id);
-    if (this.id * 1 === 0) {
-      this.update_mode = false;
-      return;
-    }
 
-    this.loadData(this.id);
+  validations: {
+    form: {
+      name: {
+        required,
+        maxLength: maxLength(50),
+      },
+      surname: {
+        required,
+        maxLength: maxLength(50),
+      },
+      pasprot_series: {
+        required,
+        maxLength: maxLength(4),
+        minLength: minLength(4),
+      },
+      pasprot_number: {
+        required,
+        maxLength: maxLength(6),
+        minLength: minLength(6),
+      },
+      birth_date: {
+        required,
+      },
+      phone: {
+        required,
+        maxLength: maxLength(13),
+        minLength: minLength(13),
+      },
+      email: {
+        required,
+        email,
+        maxLength: maxLength(14),
+      },
+    },
+  },
+
+  created() {
+    this.codes = this.$store.getters.getCountryCodes;
+    this.code = "+7";
+
+    if (this.current_object) {
+      this.$v.form.$model = this.current_object;
+      return;
+    } else {
+      if (this.booking_id >= 0) {
+        this.update_mode = false;
+
+        if (this.booking_id == 0) {
+          this.hide_button = true;
+        } else {
+          this.hide_button = false;
+        }
+      }
+    }
   },
   methods: {
-    loadData(id) {
-      $.ajax({
-        url: `${this.$store.getters.getServerUrl}/guest_detail/${id}/`,
-        type: "GET",
-        headers: {
-          "Content-type": "application/json",
-          Authorization: `Token ${localStorage.getItem("auth_token")}`,
-        },
-        success: (response) => {
-          let data = response;
-          console.log(data);
-          this.name = data.name;
-          this.surname = data.surname;
-          this.pasprot_series = data.pasprot_series;
-          this.pasprot_number = data.pasprot_number;
-          this.birth_date = data.birth_date;
-          this.phone = data.phone;
-          this.email = data.email;
-        },
-        error: (response) => {
-          alert("Ошибка");
-        },
-      });
+    validateState(name) {
+      const { $dirty, $error } = this.$v.form[name];
+      return $dirty ? !$error : null;
     },
 
-    addGuest() {
+    handleUserInput(input) {
+      var replacedInput = this.$v.form["phone"].$model
+        .replace(/\D/g, "")
+        .match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+      this.$v.form["phone"].$model = !replacedInput[2]
+        ? replacedInput[1]
+        : "(" +
+          replacedInput[1] +
+          ")" +
+          replacedInput[2] +
+          (replacedInput[3] ? "-" + replacedInput[3] : "");
+    },
+
+    async addGuest() {
+      this.$v.form.$touch();
+      if (this.$v.form.$anyError) {
+        return;
+      }
+
+      let current_data = {
+        name: this.$v.form["name"].$model,
+        surname: this.$v.form["surname"].$model,
+        pasprot_series: this.$v.form["pasprot_series"].$model,
+        pasprot_number: this.$v.form["pasprot_number"].$model,
+        birth_date: this.$v.form["birth_date"].$model,
+        phone: `${this.code}${this.$v.form["phone"].$model}`,
+        email: this.$v.form["email"].$model,
+      };
+
+      if (this.booking_id == 0) {
+        this.$emit("initGuest", current_data);
+        return;
+      }
+
+      if (this.booking_id > 0) {
+        current_data["booking"] = this.booking_id;
+      }
+
       $.ajax({
         url: `${this.$store.getters.getServerUrl}/guest/`,
         type: "POST",
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
-        data: {
-          name: this.name,
-          surname: this.surname,
-          pasprot_series: this.pasprot_series,
-          pasprot_number: this.pasprot_number,
-          birth_date: this.birth_date,
-          phone: this.phone,
-          email: this.email,
-        },
+        data: current_data,
         success: (response) => {
-          window.location.href = '/guests';
+          if (this.on_modal) {
+            location.reload();
+          } else {
+            window.location.href = "/guests";
+          }
         },
         error: (response) => {
           alert("Ошибка");
@@ -178,40 +311,17 @@ export default {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
         data: {
-          id: this.id,
-          name: this.name,
-          surname: this.surname,
-          pasprot_series: this.pasprot_series,
-          pasprot_number: this.pasprot_number,
-          birth_date: this.birth_date,
-          phone: this.phone,
-          email: this.email,
+          id: this.current_object.id,
+          name: this.$v.form["name"].$model,
+          surname: this.$v.form["surname"].$model,
+          pasprot_series: this.$v.form["pasprot_series"].$model,
+          pasprot_number: this.$v.form["pasprot_number"].$model,
+          birth_date: this.$v.form["birth_date"].$model,
+          phone: `${this.code}${this.$v.form["phone"].$model}`,
+          email: this.$v.form["email"].$model,
         },
         success: (response) => {
           location.reload();
-        },
-        error: (response) => {
-          alert("Ошибка");
-        },
-      });
-    },
-
-    del() {
-      const result = confirm(`Вы точно хотите удалить гостя ${this.id} ${this.name} ${this.surname} ?`);
-      if (!result) {
-        return;
-      }
-      $.ajax({
-        url: `${this.$store.getters.getServerUrl}/guest_remove/`,
-        type: "POST",
-        headers: {
-          Authorization: `Token ${localStorage.getItem("auth_token")}`,
-        },
-        data: {
-          id: this.id,
-        },
-        success: (response) => {
-          window.location.href = '/guests';
         },
         error: (response) => {
           alert("Ошибка");

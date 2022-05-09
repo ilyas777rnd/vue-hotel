@@ -1,46 +1,38 @@
 <template>
   <div>
-    <div class="d-flex container w-50 mt-5 mb-2 justify-content-center">
-      <span>Наименование:</span>
-      <input type="text" class="form-control ml-1 w-50" v-model="name" />
-    </div>
-    <div class="d-flex container w-95 mt-5 justify-content-center">
-
-      <b-table
-        hover
-        :items="found_enqtype"
-        :fields="fields"
-        @row-clicked="rowClickHandler"
-      >
-
-        <template #cell(delete)="row">
-          <b-button
-            size="sm"
-            @click="deleteHandler(row.item.id, row.item.name)"
-            class="mr-2 btn-danger"
-          >
-            Удалить
-          </b-button>
-        </template>
-
-      </b-table>
-
-    </div>
-    <div class="d-flex container w-100 mb-2 mt-3 justify-content-center">
-      <button type="button" class="btn btn-success" @click="AddPage()">
+    <div class="d-flex container w-100 mt-3">
+      <b-button variant="outline-primary" @click="AddPage()">
         Добавить тип оборудования
-      </button>
+      </b-button>
+      <span class="ml-5 mr-1">Наименование:</span>
+      <input type="text" class="form-control ml-1 w-25" v-model="name" />
     </div>
+    <StandartTable
+      :items="found_enqtype"
+      :fields="fields"
+      @row-click="rowClickHandler"
+      @delete="deleteHandler"
+    />
+    <b-modal ref="my-modal" hide-footer title="Информация о комнате">
+      <EqpTypeDetail :id="current_id" />
+    </b-modal>
   </div>
 </template>
 
 <script>
 import $ from "jquery";
+import EqpTypeDetail from "./EqpTypeDetail.vue";
+import StandartTable from "../components/StandartTable.vue";
 
 export default {
   name: "EqpType",
+  components: {
+    EqpTypeDetail,
+    StandartTable
+  },
   data() {
     return {
+      current_id: "",
       enqtype: [],
       found_enqtype: [],
       name: "",
@@ -52,7 +44,7 @@ export default {
         },
         {
           key: "delete",
-          label: "Удаление",
+          label: "",
         },
       ],
     };
@@ -84,19 +76,13 @@ export default {
     },
 
     rowClickHandler(record, index) {
-      const route = this.$router.resolve({
-        name: "eqptypedetail",
-        params: { id: record.id },
-      });
-      window.open(route.href, "_blank");
+      this.current_id = record.id;
+      this.showModal();
     },
 
     AddPage() {
-      const route = this.$router.resolve({
-        name: "eqptypedetail",
-        params: { id: 0 },
-      });
-      window.open(route.href, "_blank");
+      this.current_id = 0;
+      this.showModal();
     },
 
     foundEnqType(val) {
@@ -108,19 +94,19 @@ export default {
       }
     },
 
-    deleteHandler(id, name) {
-      const res = confirm(`Вы точно хотите удалить "${name}" ?`);
+    deleteHandler(temp) {
+      const res = confirm(`Вы точно хотите удалить "${temp.item.name}" ?`);
       if (!res) {
         return;
       }
       $.ajax({
-        url: `${this.$store.getters.getServerUrl}/remove_enq_type/`,
-        type: "POST",
+        url: `${this.$store.getters.getServerUrl}/enq_type/`,
+        type: "DELETE",
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
         data: {
-          id: id,
+          id: temp.item.id,
         },
         success: (response) => {
           location.reload();
@@ -129,6 +115,14 @@ export default {
           alert("Ошибка");
         },
       });
+    },
+
+    showModal() {
+      this.$refs["my-modal"].show();
+    },
+
+    closeModal() {
+      this.$refs["my-modal"].hide();
     },
   },
 };

@@ -1,34 +1,19 @@
 <template>
   <div>
-    <div class="d-flex container w-50 mt-5 mb-2 justify-content-center">
-      <span>Имя:</span>
-      <input type="text" class="form-control ml-1 w-50" v-model="name" />
-      <span class="ml-5"> Паспорт:</span>
-      <input type="text" class="form-control ml-1 w-50" v-model="passport" />
-      <!-- <span class="ml-5"> Фамилия:</span>
-      <input type="text" class="form-control ml-1 w-50" v-model="surname" /> -->
+    <div class="d-flex w-100 mt-5 mb-2 justify-content-center">
+      <span>Имя:&emsp;</span>
+      <input type="text" class="form-control w-25" v-model="name" />
+      <span class="ml-5"> Паспорт:&emsp;</span>
+      <input type="text" class="form-control ml-1 w-25" v-model="passport" />
     </div>
-    <div class="d-flex container w-100 mt-5 justify-content-center">
-      <b-table
-        hover
-        :items="found_guests"
-        :fields="fields"
-        @row-clicked="rowClickHandler"
-      >
-        <!-- <template #cell(delete)="row">
-          <b-button
-            size="sm"
-            @click="deleteHandler(row.item.id, row.item.name)"
-            class="mr-2 btn-danger"
-          >
-            Удалить
-          </b-button>
-        </template> -->
-      </b-table>
-    </div>
+    <StandartTable
+      :items="guests"
+      :fields="fields"
+      @row-click="rowClickHandler"
+    />
     <div class="w-100">
       <b-modal ref="my-modal" hide-footer title="Информация о госте">
-        <GuestDetail :id="this.current_id" />
+        <GuestDetail :id="this.current_id" :current_object="current_object" />
       </b-modal>
     </div>
   </div>
@@ -36,16 +21,28 @@
 
 <script>
 import $ from "jquery";
-import GuestDetail from './GuestDetail.vue';
+import GuestDetail from "./GuestDetail.vue";
+import StandartTable from "../components/StandartTable.vue";
 
 export default {
   name: "Guests",
   components: {
+    StandartTable,
     GuestDetail,
+  },
+  props: {
+    on_modal: {
+      type: Boolean,
+      default: false,
+    },
+    booking_id: {
+      type: Number,
+      default: -1,
+    },
   },
   data() {
     return {
-      found_guests: [],
+      current_object: {},
       guests: [],
       name: "",
       passport: "",
@@ -86,92 +83,76 @@ export default {
       ],
     };
   },
-  created() {
-    this.loadData();
-  },
 
   watch: {
     name: function (val) {
-      this.foundGuests(val);
+      if (this.name || this.passport) {
+        this.loadData();
+      } else {
+        this.guests = [];
+      }
     },
     passport: function (val) {
-      this.foundGuests(val);
+      if (this.name || this.passport) {
+        this.loadData();
+      } else {
+        this.guests = [];
+      }
     },
   },
 
   methods: {
     loadData() {
       this.guests = [];
-
       $.ajax({
-        url: `${this.$store.getters.getServerUrl}/guest_list/`,
-        type: "POST",
-        headers: {
-          Authorization: `Token ${localStorage.getItem("auth_token")}`,
-        },
-        success: (response) => {
-          this.guests = response;
-          this.foundGuests();
-        },
-        error: (response) => {
-          alert("Ошибка");
-        },
-      });
-    },
-
-    rowClickHandler(record, index) {
-      this.current_id = record.id;
-      this.showModal();
-    },
-
-    addGuestPage() {
-      this.current_id = 0;
-      this.showModal();
-    },
-
-    foundGuests(val) {
-      let res = [...this.guests];
-      if (this.name) {
-        res = res.filter((item) => {
-          return (
-            item.name.toLowerCase().includes(this.name) ||
-            item.surname.toLowerCase().includes(this.name)
-          );
-        });
-      }
-
-      if (this.passport) {
-        res = res.filter((item) => {
-          return (
-            (item.pasprot_series + "").includes(this.passport) ||
-            (item.pasprot_number + "").includes(this.passport)
-          );
-        });
-      }
-      this.found_guests = res;
-    },
-
-    deleteHandler(id, name) {
-      const res = confirm(`Вы точно хотите удалить "${name}" ?`);
-      if (!res) {
-        return;
-      }
-      $.ajax({
-        url: `${this.$store.getters.getServerUrl}/guest_remove/`,
-        type: "POST",
+        url: `${this.$store.getters.getServerUrl}/guest/`,
+        type: "GET",
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
         data: {
-          id: id,
+          name: this.name.toLowerCase(),
+          passport: this.passport,
+          //pk: "",
         },
         success: (response) => {
-          location.reload();
+          this.guests = response;
         },
-        error: (response) => {
-          alert("Ошибка");
-        },
+        error: (response) => alert("Ошибка"),
       });
+    },
+
+    async rowClickHandler(record, index) {
+      if (this.booking_id == 0) {
+        let current_data = {
+          id: record.id,
+          birth_date: record.birth_date,
+        };
+        this.$emit("initGuest", current_data);
+      } else if (this.booking_id > 0) {
+        $.ajax({
+          url: `${this.$store.getters.getServerUrl}/booking_add_guest/`,
+          type: "POST",
+          headers: {
+            Authorization: `Token ${localStorage.getItem("auth_token")}`,
+          },
+          data: {
+            booking: this.booking_id,
+            guest: record.id,
+          },
+          success: (response) => {
+            if (response.status == "add") {
+              location.reload();
+            }
+          },
+          error: (response) => {
+            alert("Ошибка");
+          },
+        });
+      } else {
+        this.current_object = JSON.parse(JSON.stringify(record));
+        this.showModal();
+      }
     },
 
     showModal() {

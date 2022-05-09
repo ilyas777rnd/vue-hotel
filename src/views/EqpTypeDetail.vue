@@ -1,24 +1,22 @@
 <template>
   <div>
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span>Наименование:</span>
-      <input
+    <b-form-group class="mt-1" id="example-input-group-1" label="Наименование:">
+      <b-form-input
         type="text"
-        style="width: 27%"
-        class="form-control"
-        v-model="name"
-      />
-    </div>
+        class="form-control w-100"
+        v-model="$v.form.name.$model"
+        :state="validateState('name')"
+        aria-describedby="name-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="name-live-feedback"
+        >Введите наименование.</b-form-invalid-feedback
+      >
+    </b-form-group>
 
     <template v-if="this.update_mode">
       <div class="d-flex container w-100 mt-5 mb-5 justify-content-center">
         <button type="button" class="btn btn-success" @click="update()">
           Обновить данные
-        </button>
-      </div>
-      <div class="d-flex container w-100 mt-2 mb-2 justify-content-center">
-        <button type="button" class="btn btn-danger" @click="del()">
-          Удалить тип оборудования
         </button>
       </div>
     </template>
@@ -35,27 +33,50 @@
 
 <script>
 import $ from "jquery";
+import { validationMixin } from "vuelidate";
+import { required, minLength, maxLength } from "vuelidate/lib/validators";
 
 export default {
+  mixins: [validationMixin],
   name: "EqpTypeDetail",
+
   data() {
     return {
-      id: 0,
-      name: '',
+      // name: '',
+      form: {
+        name: null,
+      },
       update_mode: true,
     };
   },
+
+  props: {
+    id: Number,
+  },
+
   created() {
-    let id = window.location.href.split("/")[4];
-    if (id * 1 === 0) {
+    if (this.id * 1 === 0) {
       this.update_mode = false;
       return;
     }
-    this.id = id;
-    this.loadData(id);
+    this.loadData(this.id);
   },
-  methods:{
-    loadData(id){
+
+  validations: {
+    form: {
+      name: {
+        required,
+      },
+    },
+  },
+
+  methods: {
+    validateState(name) {
+      const { $dirty, $error } = this.$v.form[name];
+      return $dirty ? !$error : null;
+    },
+
+    loadData(id) {
       $.ajax({
         url: `${this.$store.getters.getServerUrl}/enq_type_get/${id}/`,
         type: "GET",
@@ -63,8 +84,7 @@ export default {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
         success: (response) => {
-          console.log(response.data);
-          this.name = response.name;
+          this.$v.form["name"].$model = response.name;
         },
         error: (response) => {
           alert("Ошибка");
@@ -72,7 +92,7 @@ export default {
       });
     },
 
-    add(){
+    add() {
       $.ajax({
         url: `${this.$store.getters.getServerUrl}/enq_type/`,
         type: "POST",
@@ -80,10 +100,10 @@ export default {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
         data: {
-          name: this.name,
+          name: this.$v.form["name"].$model,
         },
         success: (response) => {
-          window.location.href = '/eqptype';
+          location.reload();
         },
         error: (response) => {
           alert("Ошибка");
@@ -91,30 +111,7 @@ export default {
       });
     },
 
-    del(){
-      const res = confirm(`Вы точно хотите удалить ${this.id} - ${this.name}?`);
-      if (!res) {
-        return;
-      }
-      $.ajax({
-        url: `${this.$store.getters.getServerUrl}/remove_enq_type/`,
-        type: "POST",
-        headers: {
-          Authorization: `Token ${localStorage.getItem("auth_token")}`,
-        },
-        data: {
-          id: this.id,
-        },
-        success: (response) => {
-          window.location.href = '/eqptype';
-        },
-        error: (response) => {
-          alert("Ошибка");
-        },
-      });
-    },
-
-    update(){
+    update() {
       $.ajax({
         url: `${this.$store.getters.getServerUrl}/enq_type/`,
         type: "POST",
@@ -133,9 +130,6 @@ export default {
         },
       });
     },
-  }
+  },
 };
 </script>
-
-<style>
-</style>

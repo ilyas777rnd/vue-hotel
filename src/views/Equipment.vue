@@ -4,28 +4,16 @@
       <b-tabs content-class="mt-1">
         <b-tab title="Оборудование" active>
           <div class="d-flex container w-100 mb-2 mt-3">
-            <button type="button" class="btn btn-success" @click="AddPage()">
+            <b-button variant="outline-primary" @click="AddPage()">
               Добавить оборудование
-            </button>
+            </b-button>
           </div>
-          <div class="d-flex container w-100 mt-5 justify-content-center">
-            <b-table
-              hover
-              :items="equipment"
-              :fields="fields"
-              @row-clicked="rowClickHandler"
-            >
-              <template #cell(delete)="row">
-                <b-button
-                  size="sm"
-                  @click="deleteHandler(row.item.id, row.item.name)"
-                  class="mr-2 btn-danger"
-                >
-                  Удалить
-                </b-button>
-              </template>
-            </b-table>
-          </div>
+          <StandartTable
+            :items="equipment"
+            :fields="fields"
+            @row-click="rowClickHandler"
+            @delete="deleteHandler"
+          />
         </b-tab>
 
         <b-tab title="Список оборудования">
@@ -35,25 +23,34 @@
         <b-tab title="Типы оборудования">
           <EqpType />
         </b-tab>
-
       </b-tabs>
+      <div class="w-100">
+        <b-modal ref="eqp-modal" hide-footer title="Информация об оборудовании">
+          <EquipmentDetail :id="current_id" />
+        </b-modal>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import $ from "jquery";
-import EqpType from './EqpType.vue';
-import EquipmentList from './EquipmentList.vue';
+import EqpType from "./EqpType.vue";
+import EquipmentList from "./EquipmentList.vue";
+import StandartTable from "../components/StandartTable.vue";
+import EquipmentDetail from "./EquipmentDetail.vue";
 
 export default {
   name: "Equipment",
   components: {
     EqpType,
     EquipmentList,
+    StandartTable,
+    EquipmentDetail,
   },
   data() {
     return {
+      current_id: 0,
       equipment: [],
       fields: [
         {
@@ -73,7 +70,7 @@ export default {
         },
         {
           key: "delete",
-          label: "Удаление",
+          label: "",
         },
       ],
     };
@@ -95,38 +92,39 @@ export default {
     },
 
     rowClickHandler(record, index) {
-      const route = this.$router.resolve({
-        name: "equipmentdetail",
-        params: { id: record.id },
-      });
-      window.open(route.href, "_blank");
+      this.current_id = record.id;
+      this.showModal();
     },
 
     AddPage() {
-      const route = this.$router.resolve({
-        name: "equipmentdetail",
-        params: { id: 0 },
-      });
-      window.open(route.href, "_blank");
+      this.current_id = 0;
+      this.showModal();
     },
 
-    deleteHandler(id, name) {
-      const res = confirm(`Вы точно хотите удалить "${name}" ?`);
-      if (!res) {
-        return;
+    deleteHandler(temp) {
+      const res = confirm(`Вы точно хотите удалить "${temp.item.name}" ?`);
+      if (res) {
+        $.ajax({
+          url: `${this.$store.getters.getServerUrl}/equipment_remove/`,
+          type: "POST",
+          headers: {
+            Authorization: `Token ${localStorage.getItem("auth_token")}`,
+          },
+          data: {
+            id: temp.item.id,
+          },
+          success: (response) => location.reload(),
+          error: (response) => alert("Ошибка"),
+        });
       }
-      $.ajax({
-        url: `${this.$store.getters.getServerUrl}/equipment_remove/`,
-        type: "POST",
-        headers: {
-          Authorization: `Token ${localStorage.getItem("auth_token")}`,
-        },
-        data: {
-          id: id,
-        },
-        success: (response) => location.reload(),
-        error: (response) => alert("Ошибка"),
-      });
+    },
+
+    showModal() {
+      this.$refs["eqp-modal"].show();
+    },
+
+    closeModal() {
+      this.$refs["eqp-modal"].hide();
     },
   },
 };

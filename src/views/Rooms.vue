@@ -1,39 +1,41 @@
 <template>
   <div>
-    <div class="mt-3">
+    <div class="mt-3 tabs">
       <b-tabs content-class="mt-1">
         <b-tab title="Номера" active>
-          <div class="d-flex container w-100 mb-1 mt-3">
-            <button
-              type="button"
-              class="btn btn-success"
-              @click="addRoomPage()"
-            >
-              Добавить комнату
-            </button>
-          </div>
-          <div class="d-flex container w-50 mt-1 mb-2 justify-content-center">
-            <span>Номер:</span>
-            <input type="text" class="form-control ml-1 w-50" v-model="number" />
-          </div>
-          <div class="d-flex w-95 mt-5 justify-content-center">
-            <b-table
-              hover
-              :items="found_rooms"
-              :fields="fields"
-              @row-clicked="rowClickHandlerRoom"
-            >
-              <template #cell(delete)="row">
-                <b-button
-                  size="sm"
-                  @click="deleteRoomHandler(row.item.id, row.item.number)"
-                  class="mr-2 btn-danger"
-                >
-                  <b-icon icon="trash-fill" aria-hidden="true"></b-icon> Удалить
+          <div
+            class="
+              bv-example-row bv-example-row-flex-cols
+              mt-3
+              d-flex
+              justify-content-center
+            "
+          >
+            <b-row align-v="stretch">
+              <b-col md="5">
+                <span>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</span>
+                <b-button variant="outline-primary" @click="addRoomPage()">
+                  Добавить комнату
                 </b-button>
-              </template>
-            </b-table>
+              </b-col>
+              <b-col md="6">
+                <div>
+                  <span class="ml-1">Номер:</span>
+                  <input
+                    type="text"
+                    class="form-control ml-1 w-100"
+                    v-model="number"
+                  />
+                </div>
+              </b-col>
+            </b-row>
           </div>
+          <StandartTable
+            :items="found_rooms"
+            :fields="fields"
+            @row-click="rowClickHandler"
+            @delete="deleteHandler"
+          />
         </b-tab>
 
         <b-tab title="Типы номеров">
@@ -43,7 +45,7 @@
     </div>
     <div class="w-100">
       <b-modal ref="my-modal" hide-footer title="Информация о комнате">
-        <RoomDetail :id="current_id" />
+        <RoomDetail :current_object="current_object" />
       </b-modal>
     </div>
   </div>
@@ -52,20 +54,22 @@
 <script>
 import $ from "jquery";
 import RoomType from "./RoomType.vue";
-import RoomDetail from './RoomDetail.vue';
+import RoomDetail from "./RoomDetail.vue";
+import StandartTable from "../components/StandartTable.vue";
 
 export default {
   name: "Rooms",
   components: {
     RoomType,
     RoomDetail,
+    StandartTable,
   },
   data() {
     return {
       rooms: [],
       found_rooms: [],
       number: "",
-      current_id: 0,
+      current_object: {},
       fields: [
         {
           key: "number",
@@ -94,7 +98,7 @@ export default {
         },
         {
           key: "delete",
-          label: "Удаление",
+          label: "",
         },
       ],
     };
@@ -118,10 +122,6 @@ export default {
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
-        data: {
-          start_date: "",
-          end_date: "",
-        },
         success: (response) => {
           this.rooms = response;
           this.foundRoom();
@@ -132,17 +132,17 @@ export default {
       });
     },
 
-    rowClickHandlerRoom(record, index) {
-      this.current_id = record.id;
-      this.showModal()
-    },
-
-    addRoomPage() {
-      this.current_id = 0;
+    rowClickHandler(record, index) {
+      this.current_object = JSON.parse(JSON.stringify(record));
       this.showModal();
     },
 
-    foundRoom(val){
+    addRoomPage() {
+      this.current_object = null;
+      this.showModal();
+    },
+
+    foundRoom(val) {
       this.found_rooms = [...this.rooms];
       if (this.number !== "") {
         this.found_rooms = this.rooms.filter((item) => {
@@ -151,27 +151,28 @@ export default {
       }
     },
 
-    deleteRoomHandler(id, name) {
-      const res = confirm(`Вы точно хотите удалить комнату ${name} ?`);
-      if (!res) {
-        return;
+    deleteHandler(temp) {
+      const res = confirm(
+        `Вы точно хотите удалить комнату ${temp.item.number} ?`
+      );
+      if (res) {
+        $.ajax({
+          url: `${this.$store.getters.getServerUrl}/room/`,
+          type: "DELETE",
+          headers: {
+            Authorization: `Token ${localStorage.getItem("auth_token")}`,
+          },
+          data: {
+            id: temp.item.id,
+          },
+          success: (response) => {
+            location.reload();
+          },
+          error: (response) => {
+            alert("Ошибка");
+          },
+        });
       }
-      $.ajax({
-        url: `${this.$store.getters.getServerUrl}/room_remove/`,
-        type: "POST",
-        headers: {
-          Authorization: `Token ${localStorage.getItem("auth_token")}`,
-        },
-        data: {
-          id: id,
-        },
-        success: (response) => {
-          location.reload();
-        },
-        error: (response) => {
-          alert("Ошибка");
-        },
-      });
     },
 
     showModal() {

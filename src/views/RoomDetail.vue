@@ -1,53 +1,82 @@
 <template>
   <div>
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span>Номер:</span>
-      <input
-        type="text"
-        style="width: 27%"
-        class="form-control"
-        v-model="number"
-      />
-    </div>
+    <b-form-group
+      class="mt-1"
+      id="example-input-group-1"
+      label="Номер комнаты:"
+    >
+      <b-form-input
+        type="number"
+        class="form-control w-100"
+        v-model="$v.form.number.$model"
+        :state="validateState('number')"
+        aria-describedby="number-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="number-live-feedback"
+        >Введите номер комнаты.</b-form-invalid-feedback
+      >
+    </b-form-group>
 
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span>Тип номера:</span>
+    <b-form-group class="mt-1" id="example-input-group-1" label="Тип комнаты:">
       <b-form-select
-        v-model="current_type"
+        type="number"
+        class="form-control w-100"
+        v-model="$v.form.type.$model"
+        :state="validateState('type')"
         :options="types"
-        style="width: 27%"
+        aria-describedby="name-live-feedback"
       ></b-form-select>
-    </div>
+      <b-form-invalid-feedback id="name-live-feedback"
+        >Выберите тип номера.</b-form-invalid-feedback
+      >
+    </b-form-group>
 
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span>Количество комнат:</span>
-      <input
-        type="text"
-        style="width: 27%"
-        class="form-control"
-        v-model="rooms_qty"
-      />
-    </div>
+    <b-form-group
+      class="mt-1"
+      id="example-input-group-1"
+      label="Количество комнат:"
+    >
+      <b-form-input
+        type="number"
+        class="form-control w-100"
+        v-model="$v.form.rooms_qty.$model"
+        :state="validateState('rooms_qty')"
+        aria-describedby="rooms_qty-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="rooms_qty-live-feedback"
+        >Введите количество комнат.</b-form-invalid-feedback
+      >
+    </b-form-group>
 
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span>Количество спальных мест:</span>
-      <input
-        type="text"
-        style="width: 27%"
-        class="form-control"
-        v-model="sleeper_qty"
-      />
-    </div>
+    <b-form-group
+      class="mt-1"
+      id="example-input-group-1"
+      label="Количество спальных мест:"
+    >
+      <b-form-input
+        type="number"
+        class="form-control w-100"
+        v-model="$v.form.sleeper_qty.$model"
+        :state="validateState('sleeper_qty')"
+        aria-describedby="sleeper_qty-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="sleeper_qty-live-feedback"
+        >Введите количество спальных мест.</b-form-invalid-feedback
+      >
+    </b-form-group>
 
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span>Цена в сутки:</span>
-      <input
-        type="text"
-        style="width: 27%"
-        class="form-control"
-        v-model="daily_price"
-      />
-    </div>
+    <b-form-group class="mt-1" id="example-input-group-1" label="Цена в сутки:">
+      <b-form-input
+        type="number"
+        class="form-control w-100"
+        v-model="$v.form.daily_price.$model"
+        :state="validateState('daily_price')"
+        aria-describedby="daily_price-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="daily_price-live-feedback"
+        >Введите цену в сутки.</b-form-invalid-feedback
+      >
+    </b-form-group>
 
     <template v-if="this.update_mode">
       <div class="d-flex container w-100 mt-2 mb-2 justify-content-center">
@@ -55,11 +84,6 @@
           Обновить данные
         </button>
       </div>
-      <!-- <div class="d-flex container w-100 mt-2 mb-2 justify-content-center">
-        <button type="button" class="btn btn-danger" @click="del()">
-          Удалить номер
-        </button>
-      </div> -->
     </template>
 
     <template v-else>
@@ -74,53 +98,68 @@
 
 <script>
 import $ from "jquery";
+import { validationMixin } from "vuelidate";
+import { required, minLength, maxLength } from "vuelidate/lib/validators";
 
 export default {
+  mixins: [validationMixin],
   name: "RoomDetail",
+
   data() {
     return {
-      number: 0,
-      rooms_qty: 0,
-      sleeper_qty: 0,
-      daily_price: 0,
-      types:[],
-      current_type: '',
+      types: [],
       update_mode: true,
+      form: {
+        number: null,
+        type: null,
+        rooms_qty: null,
+        sleeper_qty: null,
+        daily_price: null,
+      },
     };
   },
+
   props: {
-    id: Number
+    current_object: {},
   },
+
   created() {
     this.loadTypes();
-    if (this.id * 1 === 0) {
+    if (this.current_object) {
+      this.$v.form.$model = this.current_object;
+      this.$v.form["type"].$model = this.current_object.typeid;
+    } else {
       this.update_mode = false;
-      return;
     }
-    this.loadData(this.id);
   },
-  methods:{
-    loadData(id){
-      $.ajax({
-        url: `${this.$store.getters.getServerUrl}/room_detail/${id}/`,
-        type: "GET",
-        headers: {
-          Authorization: `Token ${localStorage.getItem("auth_token")}`,
-        },
-        success: (response) => {
-          this.number = response.number;
-          this.rooms_qty = response.rooms_qty;
-          this.sleeper_qty = response.sleeper_qty;
-          this.daily_price = response.daily_price;
-          this.current_type = response.typeid;
-        },
-        error: (response) => {
-          alert("Ошибка");
-        },
-      });
+
+  validations: {
+    form: {
+      number: {
+        required,
+      },
+      type: {
+        required,
+      },
+      rooms_qty: {
+        required,
+      },
+      sleeper_qty: {
+        required,
+      },
+      daily_price: {
+        required,
+      },
+    },
+  },
+
+  methods: {
+    validateState(name) {
+      const { $dirty, $error } = this.$v.form[name];
+      return $dirty ? !$error : null;
     },
 
-    loadTypes(){
+    loadTypes() {
       $.ajax({
         url: `${this.$store.getters.getServerUrl}/room_type_get/`,
         type: "GET",
@@ -129,8 +168,8 @@ export default {
         },
         success: (response) => {
           let data = response;
-          this.types = (data).map((element)=>{
-            return {'value': element.id, 'text':element.name};
+          this.types = data.map((element) => {
+            return { value: element.id, text: element.name };
           });
         },
         error: (response) => {
@@ -139,25 +178,12 @@ export default {
       });
     },
 
-    add(){
-      console.log(this.current_type);
-      if (!$.isNumeric(this.current_type)){
-        const elem = this.types.find(el => el.label === this.current_type);
-        if (elem==undefined){
-          alert("Выберите корректный тип номера!");
-          return;
-        }
-        this.current_type = elem.id;
+    add() {
+      this.$v.form.$touch();
+      if (this.$v.form.$anyError) {
+        return;
       }
-
-      let current_data = {
-          number: this.number,
-          status: "...",
-          rooms_qty: this.rooms_qty,
-          sleeper_qty: this.sleeper_qty,
-          daily_price: this.daily_price,
-          type: this.current_type
-        };
+      let current_data = this.getCurrentData();
 
       $.ajax({
         url: `${this.$store.getters.getServerUrl}/room/`,
@@ -167,57 +193,22 @@ export default {
         },
         data: current_data,
         success: (response) => {
-          if (response.status == "error"){
-            alert('error');
+          if (response.status == "error") {
+            alert("Ошибка");
           }
-          window.location.href = '/rooms';
+          location.reload();
         },
-        error: (response) => {
-          alert("Ошибка");
-        },
+        error: (response) => alert("Ошибка"),
       });
     },
 
-    // del(){
-    //   const res = confirm(`Вы точно хотите удалить ${this.id} - ${this.number}?`);
-    //   if (!res) {
-    //     return;
-    //   }
-
-    //   $.ajax({
-    //     url: `${this.$store.getters.getServerUrl}/room_remove/`,
-    //     type: "POST",
-    //     headers: {
-    //       Authorization: `Token ${localStorage.getItem("auth_token")}`,
-    //     },
-    //     data: {
-    //       id: this.id,
-    //     },
-    //     success: (response) => {
-    //       window.location.href = '/rooms';
-    //     },
-    //     error: (response) => {
-    //       alert("Ошибка");
-    //     },
-    //   });
-    // },
-
-    update(){
-      let current_data = {
-          id: this.id,
-          number: this.number * 1,
-          status: "AAA",
-          rooms_qty: this.rooms_qty,
-          sleeper_qty: this.sleeper_qty * 1,
-          daily_price: this.daily_price * 1,
-          type: this.current_type
-      };
-
-      console.log(current_data);
+    update() {
+      let current_data = this.getCurrentData();
+      current_data["id"] = this.id;
 
       $.ajax({
-        url: `${this.$store.getters.getServerUrl}/room_upd/`,
-        type: "POST",
+        url: `${this.$store.getters.getServerUrl}/room/`,
+        type: "PATCH",
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
@@ -230,9 +221,17 @@ export default {
         },
       });
     },
-  }
+
+    getCurrentData() {
+      return {
+        number: this.$v.form["number"].$model,
+        status: "...",
+        rooms_qty: this.$v.form["rooms_qty"].$model,
+        sleeper_qty: this.$v.form["sleeper_qty"].$model,
+        daily_price: this.$v.form["daily_price"].$model,
+        type: this.$v.form["type"].$model,
+      };
+    },
+  },
 };
 </script>
-
-<style>
-</style>

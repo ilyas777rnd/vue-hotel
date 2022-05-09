@@ -1,43 +1,49 @@
 <template>
   <div>
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span>Наименование:</span>
-      <input
+    <b-form-group class="mt-1" id="example-input-group-1" label="Наименование:">
+      <b-form-input
         type="text"
-        style="width: 27%"
-        class="form-control"
-        v-model="name"
-      />
-    </div>
+        class="form-control w-100"
+        v-model="$v.form.name.$model"
+        :state="validateState('name')"
+        aria-describedby="name-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="name-live-feedback"
+        >Введите номер комнаты.</b-form-invalid-feedback
+      >
+    </b-form-group>
 
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span>Тип:</span>
+    <b-form-group class="mt-1" id="example-input-group-1" label="Тип:">
       <b-form-select
-        v-model="current_type"
+        type="number"
+        class="form-control w-100"
+        v-model="$v.form.type.$model"
+        :state="validateState('type')"
         :options="types"
-        style="width: 27%"
+        aria-describedby="type-live-feedback"
       ></b-form-select>
-    </div>
+      <b-form-invalid-feedback id="type-live-feedback"
+        >Выберите тип оборудования.</b-form-invalid-feedback
+      >
+    </b-form-group>
 
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
-      <span>Износ(%):</span>
-      <input
-        type="text"
-        style="width: 27%"
-        class="form-control"
-        v-model="wearout"
-      />
-    </div>
+    <b-form-group class="mt-1" id="example-input-group-1" label="Износ:">
+      <b-form-input
+        type="number"
+        class="form-control w-100"
+        v-model="$v.form.wearout.$model"
+        :state="validateState('wearout')"
+        aria-describedby="wearout-live-feedback"
+      ></b-form-input>
+      <b-form-invalid-feedback id="wearout-live-feedback"
+        >Введите износ оборудования.</b-form-invalid-feedback
+      >
+    </b-form-group>
 
     <template v-if="this.update_mode">
       <div class="d-flex container w-100 mt-2 mb-2 justify-content-center">
         <button type="button" class="btn btn-success" @click="update()">
           Обновить данные
-        </button>
-      </div>
-      <div class="d-flex container w-100 mt-2 mb-2 justify-content-center">
-        <button type="button" class="btn btn-danger" @click="del()">
-          Удалить оборудование
         </button>
       </div>
     </template>
@@ -54,33 +60,57 @@
 
 <script>
 import $ from "jquery";
+import { validationMixin } from "vuelidate";
+import { required, minLength, maxLength } from "vuelidate/lib/validators";
 
 export default {
+  mixins: [validationMixin],
   name: "EquipmentDetail",
   data() {
     return {
-      id: 0,
-      name: "",
-      wearout: "",
-      current_type: "",
-      current_type_id: 0,
+      form: {
+        name: "",
+        wearout: 0,
+        type: "",
+      },
       types: [],
       update_mode: true,
     };
   },
 
+  props: {
+    id: Number,
+  },
+
   created() {
-    let id = window.location.href.split("/")[4];
     this.loadTypes();
-    if (id * 1 === 0) {
+    if (this.id * 1 === 0) {
       this.update_mode = false;
       return;
     }
-    this.id = id;
-    this.loadData(id);
+    this.loadData(this.id);
+  },
+
+  validations: {
+    form: {
+      name: {
+        required,
+      },
+      type: {
+        required,
+      },
+      wearout: {
+        required,
+      },
+    },
   },
 
   methods: {
+    validateState(name) {
+      const { $dirty, $error } = this.$v.form[name];
+      return $dirty ? !$error : null;
+    },
+
     loadData(id) {
       $.ajax({
         url: `${this.$store.getters.getServerUrl}/equipment_get/${id}/`,
@@ -89,9 +119,9 @@ export default {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
         success: (response) => {
-          this.name = response.name;
-          this.wearout = response.wearout;
-          this.current_type = response.typeid;
+          this.$v.form["name"].$model = response.name;
+          this.$v.form["wearout"].$model = response.wearout;
+          this.$v.form["type"].$model = response.typeid;
         },
         error: (response) => {
           alert("Ошибка");
@@ -119,61 +149,33 @@ export default {
     },
 
     add() {
-      if (!$.isNumeric(this.current_type)) {
-        const elem = this.types.find((el) => el.label === this.current_type);
-        this.current_type = elem.id;
+      this.$v.form.$touch();
+      if (this.$v.form.$anyError) {
+        return;
       }
-
       $.ajax({
         url: `${this.$store.getters.getServerUrl}/equipment/`,
         type: "POST",
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
-        data: {
-          name: this.name,
-          type: this.current_type,
-          wearout: this.wearout,
-        },
+        data: this.$v.form.$model,
         success: (response) => {
-          window.location.href = "/equipment";
+          location.reload();
         },
         error: (response) => {
-          alert("Ошибка");
-        },
-      });
-    },
-
-    del() {
-      const res = confirm(`Вы точно хотите удалить ${this.id} - ${this.name}?`);
-      if (!res) {
-        return;
-      }
-
-      $.ajax({
-        url: `${this.$store.getters.getServerUrl}/equipment_remove/`,
-        type: "POST",
-        headers: {
-          Authorization: `Token ${localStorage.getItem("auth_token")}`,
-        },
-        data: {
-          id: this.id,
-        },
-        success: (response) => {
-          window.location.href = "/equipment";
-        },
-        error: (response) => {
-          alert("Ошибка");
+          alert("Ошибка подключения");
         },
       });
     },
 
     update() {
-      if (!$.isNumeric(this.current_type)) {
-        const elem = this.types.find((el) => el.label === this.current_type);
-        this.current_type = elem.id;
+      this.$v.form.$touch();
+      if (this.$v.form.$anyError) {
+        return;
       }
-      console.log(this.current_type);
+      let current_data = this.$v.form.$model;
+      current_data["id"] = this.id;
 
       $.ajax({
         url: `${this.$store.getters.getServerUrl}/equipment/`,
@@ -181,12 +183,7 @@ export default {
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
-        data: {
-          id: this.id,
-          name: this.name,
-          type: this.current_type,
-          wearout: this.wearout,
-        },
+        data: current_data,
         success: (response) => {
           location.reload();
         },
@@ -198,6 +195,3 @@ export default {
   },
 };
 </script>
-
-<style>
-</style>

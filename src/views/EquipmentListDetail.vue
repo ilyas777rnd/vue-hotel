@@ -2,33 +2,34 @@
   <div>
     <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
       <span>Номер комнаты:</span>
-      <v-select
+
+      <b-form-select
         v-model="current_room"
         :options="rooms"
-        :reduce="(item) => item.id"
-      />
+        class="w-50"
+      ></b-form-select>
     </div>
 
     <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
       <span>Оборудование:</span>
-      <v-select
+
+      <b-form-select
         v-model="current_equipment"
         :options="equipments"
-        :reduce="(item) => item.id"
-      />
+        class="w-50"
+      ></b-form-select>
     </div>
 
     <div class="d-flex container w-100 mt-5 mb-2 justify-content-between">
       <span>Количество:</span>
       <input
         type="text"
-        style="width: 27%"
-        class="form-control"
+        class="form-control w-50"
         v-model="qty"
       />
     </div>
 
-    <div class="d-flex container w-100 mt-2 mb-2 justify-content-center">
+    <div class="d-flex container w-100 mt-4 mb-2 justify-content-center">
       <button type="button" class="btn btn-success" @click="add()">
         Добавить оборудованиe
       </button>
@@ -57,17 +58,16 @@ export default {
   methods: {
     loadEquipment() {
       $.ajax({
-        url: `${this.$store.getters.getServerUrl}/equipment_view/`,
+        url: `${this.$store.getters.getServerUrl}/equipment_get/`,
         type: "GET",
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
         success: (response) => {
-          let data = response.data;
+          let data = response;
           this.equipments = data.map((element) => {
-            return { id: element.id, label: element.attributes.name };
+            return { value: element.id, text: element.name };
           });
-          console.log(this.equipments);
         },
         error: (response) => {
           alert("Ошибка");
@@ -75,22 +75,36 @@ export default {
       });
     },
 
-    loadRooms() {
+    async loadRooms() {
+      console.log('aaa');
+      let current_data = {
+        start_date: "",
+        end_date: "",
+        type: "",
+      };
+
       $.ajax({
         url: `${this.$store.getters.getServerUrl}/room_view/`,
         type: "GET",
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
-        data: {
-          start_date: '',
-          end_date:'',
-        },
+        data: current_data,
         success: (response) => {
-          let data = response.data;
-          this.rooms = data.map((element) => {
-            return { id: element.id, label: element.attributes.number };
+          let data = response;
+          console.log(data);
+
+          this.rooms = [];
+          data.map((element) => {
+            this.rooms.push({
+              value: element.id,
+              text: element.number,
+              type: element.type,
+              typeid: element.typeid,
+              price: element.daily_price,
+            });
           });
+
           console.log(this.rooms);
         },
         error: (response) => {
@@ -100,14 +114,18 @@ export default {
     },
 
     add() {
-      if (this.current_room == undefined || this.current_equipment==undefined || this.qty==''){
-        alert('Ошибка, введите корректные данные!');
+      if (
+        this.current_room == undefined ||
+        this.current_equipment == undefined ||
+        this.qty == ""
+      ) {
+        alert("Ошибка, введите корректные данные!");
         return;
       }
 
       console.log(this.current_equipment, this.current_room, this.qty);
       $.ajax({
-        url: `${this.$store.getters.getServerUrl}/enq_list/`,
+        url: `${this.$store.getters.getServerUrl}/eq_list/`,
         type: "POST",
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
@@ -118,7 +136,7 @@ export default {
           qty: this.qty,
         },
         success: (response) => {
-          window.location.href = "/equipmentlist/";
+          window.location.href = "/equipment/";
         },
         error: (response) => {
           alert("Ошибка");

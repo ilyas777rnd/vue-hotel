@@ -1,10 +1,10 @@
 <template>
-  <div class="home">
-    <section class="standart-section products-wrap">
-       <h2 class="text-center mt-5" style="margin-bottom: 285px">
-         Чтобы воспользоваться системой, пожалуйста авторизуйтесь.
-       </h2>
-    </section>
+  <div class="home mb-5 mt-5">
+    <!-- <section class="standart-section products-wrap mb-5 mt-5">
+      <h4>
+        Чтобы воспользоваться системой, пожалуйста авторизуйтесь.
+      </h4>
+    </section> -->
   </div>
 </template>
 
@@ -15,6 +15,12 @@ import { mapGetters } from "vuex";
 export default {
   name: "Home",
   components: {},
+  created() {
+    if (this.$store.getters.isUserAuth) {
+      //console.log(this.$store.getters.isUserAuth);
+      window.location.href = "/";
+    }
+  },
   methods: {
     ...mapGetters({
       isUserAuth: "isUserAuth",
@@ -25,3 +31,10 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+h4 {
+  margin-left: 250px;
+  margin-bottom: 90px;
+}
+</style>

@@ -1,91 +1,104 @@
 <template>
   <div>
-    <div class="d-flex container w-100 mt-4 mb-2 justify-content-between">
-      <button
-        type="button"
-        class="btn btn-success mr-2"
-        @click="addBookingPage()"
-      >
-        Добавить бронь
-      </button>
-
-      <span class="ml-3 mr-3">Дата начала:</span>
-
-      <b-input-group class="w-25">
-        <b-form-input
-          id="startdate"
-          v-model="start_date"
-          type="date"
-          placeholder="ДД-ММ-ДДДД"
-          autocomplete="off"
-        ></b-form-input>
-      </b-input-group>
-
-      <span class="ml-2 mr-3"> Дата окончания:</span>
-
-      <b-input-group class="w-25">
-        <b-form-input
-          id="enddate"
-          v-model="end_date"
-          type="date"
-          placeholder="ДД-ММ-ГГГГ"
-          autocomplete="off"
-        ></b-form-input>
-      </b-input-group>
-
-      <span class="ml-2 mr-3"> Тип номера:</span>
-
-      <b-form-select
-        v-model="current_type"
-        :options="types"
-        style="width: 27%"
-      ></b-form-select>
-    </div>
     <div
-      class="d-flex mt-5 justify-content-center"
-      style="margin-bottom: 100px; width: 97%"
+      class="
+        bv-example-row bv-example-row-flex-cols
+        mt-3
+        d-flex
+        justify-content-center
+      "
     >
-      <b-table
-        hover
-        :items="bookings"
-        :fields="fields"
-        @row-clicked="rowClickHandler"
-      >
-        <template #cell(delete)="row">
-          <b-button
-            size="sm"
-            @click="
-              deleteHandler(
-                row.item.id,
-                row.item.room,
-                row.item.start_date,
-                row.item.end_date
-              )
-            "
-            class="mr-2 btn-danger"
-          >
-            <b-icon icon="trash-fill" aria-hidden="true"></b-icon> Удалить
+      <b-row align-v="stretch">
+        <b-col md="4" lg="3">
+          <span>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</span>
+          <b-button variant="outline-primary" @click="addBookingPage()">
+            Добавить бронь
           </b-button>
-        </template>
-      </b-table>
+        </b-col>
+
+        <b-col md="4" lg="2">
+          <span>Дата начала:</span>
+
+          <b-input-group>
+            <b-form-input
+              id="startdate"
+              v-model="start_date"
+              type="date"
+              placeholder="ДД-ММ-ДДДД"
+              autocomplete="off"
+            ></b-form-input>
+          </b-input-group>
+        </b-col>
+
+        <b-col md="4" lg="2">
+          <span> Дата окончания:</span>
+
+          <b-input-group>
+            <b-form-input
+              id="enddate"
+              v-model="end_date"
+              type="date"
+              placeholder="ДД-ММ-ГГГГ"
+              autocomplete="off"
+            ></b-form-input>
+          </b-input-group>
+        </b-col>
+
+        <b-col md="4" lg="2"
+          ><span> Тип номера:</span>
+
+          <b-form-select
+            v-model="current_type"
+            :options="types"
+          ></b-form-select>
+        </b-col>
+
+        <b-col md="4" lg="2">
+          <span> Номер комнаты:</span>
+
+          <b-form-select v-model="current_room" :options="rooms"></b-form-select
+        ></b-col>
+
+        <b-col md="2" lg="1">
+          <div @click="downloadReport()">
+            <b-icon
+              class="mt-4 ml-2"
+              id="downloadIcon"
+              icon="download"
+              aria-hidden="true"
+            ></b-icon>
+          </div>
+        </b-col>
+      </b-row>
     </div>
+    <StandartTable
+      :items="bookings"
+      :fields="fields"
+      @row-click="rowClickHandler"
+      @delete="deleteHandler"
+    />
   </div>
 </template>
 
 <script>
 import $ from "jquery";
-import datetime from "vuejs-datetimepicker";
+import StandartTable from "../components/StandartTable.vue";
 
 export default {
   name: "Booking",
-  components: { datetime },
+  components: {
+    StandartTable,
+  },
   data() {
     return {
       bookings: [],
+      rooms: [],
+      current_room: "",
       start_date: "",
       end_date: "",
       types: [],
       current_type: "",
+      delete: false,
       fields: [
         {
           key: "id",
@@ -123,70 +136,82 @@ export default {
         },
         {
           key: "delete",
-          label: "Удаление",
+          label: "",
+        },
+
+        {
+          key: "delete",
+          label: "",
         },
       ],
     };
   },
 
-  created() {
-    if (!localStorage.getItem("auth_token")) {
-      window.location.href = "/home";
+  mounted() {
+    if (!this.$store.getters.isUserAuth) {
+      return;
     }
-    // var today = new Date();
-    // var dd = String(today.getDate()).padStart(2, "0");
-    // var mm = String(today.getMonth() + 1).padStart(2, "0");
-    // var yyyy = today.getFullYear();
 
-    //today = yyyy + "-" + mm + "-" + dd;
-    //console.log(today);
     this.loadTypes();
-    this.loadData(`1900-01-01`, `2100-12-28`);
+    this.loadRooms();
   },
 
   watch: {
     start_date: function (val) {
-      if (this.checkDate(val) && this.checkDate(this.end_date)) {
-        this.loadData(val, this.end_date);
-      }
+      this.loadData();
     },
+
     end_date: function (val) {
-      if (this.checkDate(this.start_date) && this.checkDate(val)) {
-        this.loadData(this.start_date, val);
-      }
+      this.loadData();
+    },
+
+    current_type: function (val) {
+      this.loadData();
+      this.loadRooms();
+    },
+
+    current_room: function (val) {
+      this.loadData();
     },
   },
 
   methods: {
-    async loadData(startDate, endDate) {
-      console.log(startDate, endDate);
-      if (!this.checkDate(startDate) || !this.checkDate(endDate)) {
-        alert("Ошибка");
-        return;
-      }
-      this.bookings = [];
+    async downloadReport() {
+      console.log("aaa");
+    },
+
+    async loadData() {
+      let current_data = {
+        start_date: this.start_date,
+        end_date: this.end_date,
+        room_type: this.current_type,
+        room_number: this.current_room,
+      };
 
       $.ajax({
-        url: `${this.$store.getters.getServerUrl}/booking_view/`,
-        type: "POST",
+        url: `${this.$store.getters.getServerUrl}/booking/`,
+        type: "GET",
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
-        data: {
-          start_date: startDate,
-          end_date: endDate,
-          //room: 103,
-        },
+        data: current_data,
         success: (response) => {
           this.bookings = response;
+          // const url = window.URL.createObjectURL(new Blob([response.data]));
+          // const link = document.createElement("a");
+          // link.href = url;
+          // link.setAttribute("download", "file.xlsx");
+          // document.body.appendChild(link);
+          // link.click();
         },
-        error: (response) => {
-          alert("Ошибка");
-        },
+        error: (response) => alert("Ошибка"),
       });
     },
 
     async loadTypes() {
+      if (!this.$store.getters.isUserAuth) {
+        return;
+      }
       $.ajax({
         url: `${this.$store.getters.getServerUrl}/room_type_get/`,
         type: "GET",
@@ -195,72 +220,94 @@ export default {
         },
         success: (response) => {
           let data = response;
-          this.types = data.map((element) => {
-            return { value: element.id, text: element.name };
+          this.types = [];
+          this.types.push({ value: null, text: "Все типы" });
+          data.map((element) => {
+            this.types.push({ value: element.id, text: element.name });
           });
+          this.current_type = null;
         },
-        error: (response) => {
-          alert("Ошибка");
-        },
+        // error: (response) => {
+        //   alert("Ошибка");
+        // },
       });
     },
 
-    rowClickHandler(record, index) {
-      const route = this.$router.resolve({
-        name: "bookingdetail",
-        params: { id: record.id },
-      });
-      window.open(route.href, "_blank");
-    },
-
-    addBookingPage() {
-      // const route = this.$router.resolve({
-      //   name: "bookingdetail",
-      //   params: { id: 0 },
-      // });
-      // window.open(route.href, "_blank");
-      window.location.href = "/bookingdetail/0";
-    },
-
-    deleteHandler(id, room, start_date, end_date) {
-      const res = confirm(`Вы точно хотите удалить бронь на ${room} комнату с ${start_date} по ${end_date} ?`);
-      if (!res) {
+    async loadRooms() {
+      if (!this.$store.getters.isUserAuth) {
         return;
       }
+
+      let current_data = {
+        start_date: "",
+        end_date: "",
+      };
+
+      if ($.isNumeric(this.current_type)) {
+        current_data["type"] = this.current_type;
+      } else {
+        current_data["type"] = 0;
+      }
+
       $.ajax({
-        url: `${this.$store.getters.getServerUrl}/booking_remove/`,
-        type: "POST",
+        url: `${this.$store.getters.getServerUrl}/room_view/`,
+        type: "GET",
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
-        data: {
-          id: id,
-        },
+        data: current_data,
         success: (response) => {
-          location.reload();
+          let data = response;
+
+          this.rooms = [];
+          this.rooms.push({ value: null, text: "Все номера" });
+          data.map((element) => {
+            this.rooms.push({
+              value: element.id,
+              text: element.number,
+              type: element.type,
+              typeid: element.typeid,
+              price: element.daily_price,
+            });
+          });
+
+          this.current_room = null;
         },
-        error: (response) => {
-          alert("Ошибка");
-        },
+        // error: (response) => {
+        //   alert("Ошибка");
+        // },
       });
     },
 
-    checkDate(date) {
-      let date_split = date.split("-");
-      let y = date_split[0];
-      let m = date_split[1];
-      let d = date_split[2];
-      try {
-        var dt = new Date(y, m - 1, d, 0, 0, 0, 0);
+    rowClickHandler(record) {
+      window.location.href = `/bookingdetail/${record.id}`;
+    },
 
-        var mon = dt.getMonth() + 1;
-        var day = dt.getDate();
-        var yr = dt.getYear() + 1900;
+    addBookingPage() {
+      window.location.href = "/bookingdetail/0";
+    },
 
-        if (mon == m && yr == y && day == d) return true;
-        else return false;
-      } catch (e) {
-        return false;
+    deleteHandler(temp) {
+      const res = confirm(
+        `Вы точно хотите удалить бронь на ${temp.item.room} комнату с ${temp.item.start_date} по ${temp.item.end_date} ?`
+      );
+      if (res) {
+        $.ajax({
+          url: `${this.$store.getters.getServerUrl}/booking/`,
+          type: "DELETE",
+          headers: {
+            Authorization: `Token ${localStorage.getItem("auth_token")}`,
+          },
+          data: {
+            id: temp.item.id,
+          },
+          success: (response) => {
+            location.reload();
+          },
+          // error: (response) => {
+          //   //alert("Ошибка");
+          // },
+        });
       }
     },
   },

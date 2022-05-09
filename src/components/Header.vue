@@ -1,27 +1,26 @@
 <template>
   <div>
-    <header id="header">
-      <div class="container d-flex justify-content-between align-items">
+    <div id="header">
+      <div class="d-flex justify-content-between">
         <div class="logo">
           HotelManager
         </div>
         <nav class="header-nav">
-          <!-- <a href="aboutus.html">Контакты</a> -->
 
           <a
             href="/login"
             v-if="!this.$store.getters.isUserAuth"
             role="button"
-            class="btn link"
+            class="btn link mr-5"
             >Войти</a
           >
 
-          <a href="#" id="logout" v-else @click="Logout()" role="button" class="btn link"
+          <a href="#" id="logout" v-else @click="Logout()" role="button" class="btn link mr-2"
             ><b-icon icon="power"></b-icon> Выйти</a
           >
         </nav>
       </div>
-    </header>
+    </div>
   </div>
 </template>
 

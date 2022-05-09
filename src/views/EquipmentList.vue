@@ -1,50 +1,24 @@
 <template>
   <div>
-    <div class="d-flex w-95 mt-5 justify-content-center">
-
-      <b-table
-        hover
-        :items="equipment"
-        :fields="fields"
-      >
-        <template #cell(update)="row">
-          <b-button
-            size="sm"
-            @click="
-              ActivateModal(
-                row.item.qty,
-                row.item.name,
-                row.item.number,
-                row.item.id
-              )
-            "
-            class="mr-2 btn-info"
-          >
-            Изменить количество
-          </b-button>
-        </template>
-
-        <template #cell(delete)="row">
-          <b-button
-            size="sm"
-            @click="del(row.item.id, row.item.number, row.item.name)"
-            class="mr-2 btn-danger"
-          >
-            Удалить
-          </b-button>
-        </template>
-      </b-table>
-
-    </div>
-    <div class="d-flex container w-100 mt-5 mb-2 justify-content-center">
-      <button type="button" class="btn btn-success" @click="AddPage()">
+    <div class="d-flex container w-100 mt-3 mb-2">
+      <b-button variant="outline-primary" @click="AddPage()">
         Добавить оборудование
-      </button>
+      </b-button>
     </div>
+
+    <StandartTable
+      :items="equipment"
+      :fields="fields"
+      @row-click="rowClickHandler"
+      @delete="del"
+    />
 
     <div class="w-100">
-      <b-modal ref="my-modal" hide-footer title="Изменить количество">
-        <div class="d-block text-center">
+      <b-modal ref="my-modal" hide-footer title="Информация об оборудовании">
+        <div v-if="added">
+          <EquipmentListDetail />
+        </div>
+        <div class="d-block text-center" v-else>
           <h5>
             Текущее количество "{{ current_name }}" в комнате
             {{ current_room }} - {{ current_qty }} шт.
@@ -63,13 +37,6 @@
             >Изменить количество</b-button
           >
         </div>
-        <b-button
-          class="mt-3"
-          variant="outline-danger"
-          block
-          @click="closeModal()"
-          >Отмена</b-button
-        >
       </b-modal>
     </div>
   </div>
@@ -77,13 +44,19 @@
 
 <script>
 import $ from "jquery";
+import StandartTable from "../components/StandartTable.vue";
+import EquipmentListDetail from "./EquipmentListDetail.vue";
 
 export default {
   name: "EquipmentList",
+  components: {
+    StandartTable,
+    EquipmentListDetail,
+  },
   data() {
     return {
       equipment: [],
-      //showModal: false,
+      added: true,
       current_qty: 0,
       new_qty: "",
       current_room: 0,
@@ -111,11 +84,6 @@ export default {
           sortable: true,
         },
         {
-          key: "update",
-          label: "Изменить количество",
-          sortable: true,
-        },
-        {
           key: "delete",
           label: "Удаление",
         },
@@ -128,24 +96,12 @@ export default {
   methods: {
     loadData() {
       $.ajax({
-        url: `${this.$store.getters.getServerUrl}/enq_list_view/`,
+        url: `${this.$store.getters.getServerUrl}/eq_list/`,
         type: "GET",
         headers: {
           Authorization: `Token ${localStorage.getItem("auth_token")}`,
         },
-        success: (response) => {
-          this.equipment = response;
-          console.log(this.equipment);
-          // this.equipment = response.data.map((element) => {
-          //   return {
-          //     id: element.id,
-          //     number: element.attributes.room.number,
-          //     name: element.attributes.enquipment.name,
-          //     qty: element.attributes.qty,
-          //     wearout: element.attributes.enquipment.wearout,
-          //   };
-          // });
-        },
+        success: (response) => (this.equipment = response),
         error: (response) => {
           alert("Ошибка");
         },
@@ -153,35 +109,43 @@ export default {
     },
 
     AddPage() {
-      const route = this.$router.resolve({
-        name: "equipmentlistdetail",
-        params: { id: 0 },
-      });
-      window.open(route.href, "_blank");
+      this.added = true;
+      this.showModal();
+      // window.location.href = "/equipmentlistdetail/0";
     },
 
-    del(id, number, name) {
-      const res = confirm(`Вы точно хотите удалить ${number} - ${name}?`);
-      if (!res) {
-        return;
-      }
+    rowClickHandler(record, index) {
+      this.added = false;
+      this.current_qty = record.qty;
+      this.current_name = record.enquipment;
+      this.current_room = record.room;
+      this.current_id = record.id;
+      this.showModal();
+    },
 
-      $.ajax({
-        url: `${this.$store.getters.getServerUrl}/enq_list_remove/`,
-        type: "POST",
-        headers: {
-          Authorization: `Token ${localStorage.getItem("auth_token")}`,
-        },
-        data: {
-          id: id,
-        },
-        success: (response) => {
-          location.reload();
-        },
-        error: (response) => {
-          alert("Ошибка");
-        },
-      });
+    del(temp) {
+      console.log(temp.item);
+      const res = confirm(
+        `Вы точно хотите удалить ${temp.item.number} - ${temp.item.enquipment}?`
+      );
+      if (res) {
+        $.ajax({
+          url: `${this.$store.getters.getServerUrl}/eq_list/`,
+          type: "DELETE",
+          headers: {
+            Authorization: `Token ${localStorage.getItem("auth_token")}`,
+          },
+          data: {
+            id: temp.item.id,
+          },
+          success: (response) => {
+            location.reload();
+          },
+          error: (response) => {
+            alert("Ошибка");
+          },
+        });
+      }
     },
 
     ActivateModal(qty, name, room, id) {
@@ -221,7 +185,6 @@ export default {
         },
       });
     },
-
   },
 };
 </script>
